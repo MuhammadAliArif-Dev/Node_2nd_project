@@ -1,5 +1,6 @@
 const { DataTypes } = require("sequelize");
-const sequelize = require("../config/database.js")
+const sequelize = require("../config/database.js");
+const snaptrade = require("../config/snaptrade.js");
 
 const User = sequelize.define("User", {
     id: {
@@ -42,6 +43,10 @@ const User = sequelize.define("User", {
         type: DataTypes.STRING(255),
         allowNull: true,
         unique: true
+    },
+    snaptradeUserSecret: {
+        type: DataTypes.STRING,
+        allowNull: true
     }
 
 });

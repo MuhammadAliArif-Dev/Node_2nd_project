@@ -5,12 +5,14 @@ const passport = require("./config/passport")
 const sequelize = require("./config/database")
 const User = require("./models/user")
 const authRoutes = require("./routes/authRoutes")
+const snaptradeRoutes = require("./routes/snaptradeRoutes")
 const PORT = process.env.PORT || 3500
 //middleware
 app.use(express.json())
 app.use(passport.initialize())
 
 app.use("/api/auth", authRoutes)
+app.use("/api/snaptrade", snaptradeRoutes)
 
 // app.get("/", (req, res) => {
 //     res.send("hello world")

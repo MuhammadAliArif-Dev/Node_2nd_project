@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "8b5a0342-83b6-4b9e-9d8a-9a990ecf892a",
-		"name": "Node Project - Role Management",
-		"description": "Postman collection for testing Authentication, Role-Based Access Control (RBAC), and Course management.",
+		"name": "Node 2nd Project - Auth & SnapTrade Alpaca Webhooks",
+		"description": "Postman collection for testing Authentication (Local & Google OAuth 2.0), RBAC, Profile, and SnapTrade Alpaca Brokerage integration with Server-to-Server Webhooks.",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -22,34 +22,6 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\n  \"first_name\": \"Ali\",\n  \"last_name\": \"Arif\",\n  \"email\": \"ali@example.com\",\n  \"password\": \"ali123@\",\n  \"role\": \"super_admin\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/auth/register",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"register"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Register - Teacher",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"first_name\": \"Hamza\",\n  \"last_name\": \"Teacher\",\n  \"email\": \"teacher@example.com\",\n  \"password\": \"teacher123\",\n  \"role\": \"teacher\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/auth/register",
@@ -94,6 +66,34 @@
 					"response": []
 				},
 				{
+					"name": "Register - Teacher",
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"first_name\": \"Hamza\",\n  \"last_name\": \"Teacher\",\n  \"email\": \"teacher@example.com\",\n  \"password\": \"teacher123\",\n  \"role\": \"teacher\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/register",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"register"
+							]
+						}
+					},
+					"response": []
+				},
+				{
 					"name": "Login - Super Admin (Auto-saves Token)",
 					"event": [
 						{
@@ -120,50 +120,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"admin@example.com\",\n  \"password\": \"admin123\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/auth/login",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"login"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Login - Teacher (Auto-saves Token)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.token) {",
-									"    pm.collectionVariables.set(\"token\", jsonData.token);",
-									"    console.log(\"Teacher Token saved!\");",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"email\": \"teacher@example.com\",\n  \"password\": \"teacher123\"\n}"
+							"raw": "{\n  \"email\": \"ali@example.com\",\n  \"password\": \"ali123@\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/auth/login",
@@ -234,7 +191,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"email\": \"tariq@test.com\"\n}"
+							"raw": "{\n  \"email\": \"ali@example.com\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/auth/forget-pwd",
@@ -262,7 +219,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"new_password\": \"tariqNewPassword@123\"\n}"
+							"raw": "{\n  \"new_password\": \"AliNewPassword@123\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/auth/reset-pwd/:token",
@@ -278,7 +235,7 @@
 							"variable": [
 								{
 									"key": "token",
-									"value": "PASTE_TOKEN_HERE"
+									"value": "PASTE_RESET_TOKEN_HERE"
 								}
 							]
 						}
@@ -332,14 +289,34 @@
 						}
 					},
 					"response": []
+				},
+				{
+					"name": "Google Auth - Initiate (Open in Browser)",
+					"request": {
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/auth/google",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"auth",
+								"google"
+							]
+						},
+						"description": "Trigger Google OAuth 2.0 flow. Open this URL in browser to authenticate with Google."
+					},
+					"response": []
 				}
 			]
 		},
 		{
-			"name": "2. Courses",
+			"name": "2. SnapTrade & Alpaca Integration",
 			"item": [
 				{
-					"name": "Create Course (Teacher or Admin)",
+					"name": "Connect Alpaca (Protected - Generates Portal URL)",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -358,65 +335,24 @@
 								"value": "application/json"
 							}
 						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"title\": \"Full Stack Web Development\",\n  \"description\": \"Learn Node.js, Express, Sequelize, and React from scratch.\"\n}"
-						},
 						"url": {
-							"raw": "{{baseUrl}}/api/course/create",
+							"raw": "{{baseUrl}}/api/snaptrade/connect-alpaca",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
-								"course",
-								"create"
+								"snaptrade",
+								"connect-alpaca"
 							]
-						}
+						},
+						"description": "Protected route. Registers user on SnapTrade (or reuses stored userSecret from DB) and returns a redirectURI to connect Alpaca Paper."
 					},
 					"response": []
 				},
 				{
-					"name": "Get All Courses",
+					"name": "SnapTrade Webhook Listener (Server-to-Server)",
 					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
-						"method": "GET",
-						"header": [],
-						"url": {
-							"raw": "{{baseUrl}}/api/course",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"course"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Create Course (Student Attempt - Expected 403 Forbidden)",
-					"request": {
-						"auth": {
-							"type": "bearer",
-							"bearer": [
-								{
-									"key": "token",
-									"value": "{{token}}",
-									"type": "string"
-								}
-							]
-						},
 						"method": "POST",
 						"header": [
 							{
@@ -426,19 +362,20 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"title\": \"Illegal Student Course\",\n  \"description\": \"Student should NOT be able to create a course!\"\n}"
+							"raw": "{\n  \"eventType\": \"TEST_WEBHOOK\",\n  \"userId\": \"user_1\",\n  \"eventTimestamp\": \"2026-10-08T12:00:00.000Z\",\n  \"webhookId\": \"test-webhook-uuid\"\n}"
 						},
 						"url": {
-							"raw": "{{baseUrl}}/api/course/create",
+							"raw": "{{baseUrl}}/api/snaptrade/webhook",
 							"host": [
 								"{{baseUrl}}"
 							],
 							"path": [
 								"api",
-								"course",
-								"create"
+								"snaptrade",
+								"webhook"
 							]
-						}
+						},
+						"description": "Public webhook endpoint for receiving asynchronous events from SnapTrade cloud servers (e.g. CONNECTION_ATTEMPT_SUCCESS, TEST_WEBHOOK)."
 					},
 					"response": []
 				}

@@ -1,3 +1,0 @@
-(ek repo create karo uss mein express js ka project create karo aur jo auth apny phly bani thi wohi code again ship kar loo.)
-ya task mja mera trainer na diya ha ma chahta hu k tm isa krna ma mari help kro tmna khudi sa kuch be implement nhi krna tmna mja buss batana ha konsa kam kesa hoga taka mera sara concepts or doupts clear ho ma chahta hu tm mja ak mentor ke tra guide kro buss or hm disscussion krta rha ga or implementation ma khudi kru ga 
-ab mera task ko steps ma divide krdo or mja bataou mja ya task complete krna ka liya subsa pehla kya krna chya
