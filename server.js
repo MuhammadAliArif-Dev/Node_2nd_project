@@ -7,6 +7,7 @@ const User = require("./models/user")
 const BrokerageAccount = require("./models/brokerageAccount")
 const authRoutes = require("./routes/authRoutes")
 const snaptradeRoutes = require("./routes/snaptradeRoutes")
+const worker = require("./workers/webhookWorker")
 const PORT = process.env.PORT || 3500
 //middleware
 app.use(express.json({

@@ -1,6 +1,7 @@
 const User = require("../models/user")
 const BrokerageAccount = require("../models/brokerageAccount")
 const snaptrade = require("../config/snaptrade")
+const webhookQueue = require("../queues/webhookQueue")
 
 const connectAlpaca = async (req, res) => {
     try {
@@ -94,21 +95,24 @@ const handleWebhook = async (req, res) => {
             return res.status(200).json({ received: true });
         }
         console.log(`Received: ${eventType} | User: ${userId || "None"}`);
-        res.status(200).json({ received: true });
 
-        if (eventType === "CONNECTION_ATTEMPT_SUCCESS" || eventType === "ACCOUNT_ADDED") {
+        if (eventType === "CONNECTION_ADDED" || eventType === "ACCOUNT_ADDED" || eventType === "CONNECTION_ATTEMPT_SUCCESS" || eventType === "NEW_ACCOUNT_AVAILABLE") {
             if (userId && typeof userId === "string") {
-                setImmediate(() => {
-                    syncUserAccounts(userId);
-                });
+                await webhookQueue.add("syncAccountJob", {
+                    userId: userId,
+                    eventType: eventType
+                })
+                console.log(`Job successfullt added to Redis for: ${userId}`)
             }
         } else {
             console.log(`Event '${eventType}' acknowledged, no sync needed.`);
         }
+        return res.status(200).json({ received: true})
+
     } catch (error) {
         console.error("Ingestion error:", error);
         if (!res.headersSent) {
-            return res.status(200).json({ received: true });
+            return res.status(500).json({ error: "Failed to queue webhook event" });
         }
     }
 };
