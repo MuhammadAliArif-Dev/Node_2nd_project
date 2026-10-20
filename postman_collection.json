@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "8b5a0342-83b6-4b9e-9d8a-9a990ecf892a",
-		"name": "Node 2nd Project - Auth & SnapTrade Alpaca Webhooks",
-		"description": "Postman collection for testing Authentication (Local & Google OAuth 2.0), RBAC, Profile, and SnapTrade Alpaca Brokerage integration with Server-to-Server Webhooks.",
+		"name": "Node 2nd Project - Auth, SnapTrade Alpaca & BullMQ Webhooks",
+		"description": "Postman collection for testing Authentication (Local & Google OAuth 2.0), RBAC, Profile, SnapTrade Alpaca Brokerage integration, BullMQ Webhooks, Connections Management, and Stock Order Placement (Trading API).",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -10,7 +10,7 @@
 			"name": "1. Authentication",
 			"item": [
 				{
-					"name": "Register - Super Admin",
+					"name": "Register User",
 					"request": {
 						"method": "POST",
 						"header": [
@@ -21,7 +21,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"first_name\": \"Ali\",\n  \"last_name\": \"Arif\",\n  \"email\": \"ali@example.com\",\n  \"password\": \"ali123@\",\n  \"role\": \"super_admin\"\n}"
+							"raw": "{\n  \"first_name\": \"Ali\",\n  \"last_name\": \"Arif\",\n  \"email\": \"ali@example.com\",\n  \"password\": \"ali123@\",\n  \"role\": \"student\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/auth/register",
@@ -38,63 +38,7 @@
 					"response": []
 				},
 				{
-					"name": "Register - Student",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"first_name\": \"Zain\",\n  \"last_name\": \"Student\",\n  \"email\": \"student@example.com\",\n  \"password\": \"student123\",\n  \"role\": \"student\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/auth/register",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"register"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Register - Teacher",
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"first_name\": \"Hamza\",\n  \"last_name\": \"Teacher\",\n  \"email\": \"teacher@example.com\",\n  \"password\": \"teacher123\",\n  \"role\": \"teacher\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/auth/register",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"register"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Login - Super Admin (Auto-saves Token)",
+					"name": "Login (Auto-saves Token)",
 					"event": [
 						{
 							"listen": "test",
@@ -103,7 +47,7 @@
 									"var jsonData = pm.response.json();",
 									"if (jsonData.token) {",
 									"    pm.collectionVariables.set(\"token\", jsonData.token);",
-									"    console.log(\"Super Admin Token saved!\");",
+									"    console.log(\"Auth Token successfully auto-saved in collection variables!\");",
 									"}"
 								],
 								"type": "text/javascript"
@@ -121,49 +65,6 @@
 						"body": {
 							"mode": "raw",
 							"raw": "{\n  \"email\": \"ali@example.com\",\n  \"password\": \"ali123@\"\n}"
-						},
-						"url": {
-							"raw": "{{baseUrl}}/api/auth/login",
-							"host": [
-								"{{baseUrl}}"
-							],
-							"path": [
-								"api",
-								"auth",
-								"login"
-							]
-						}
-					},
-					"response": []
-				},
-				{
-					"name": "Login - Student (Auto-saves Token)",
-					"event": [
-						{
-							"listen": "test",
-							"script": {
-								"exec": [
-									"var jsonData = pm.response.json();",
-									"if (jsonData.token) {",
-									"    pm.collectionVariables.set(\"token\", jsonData.token);",
-									"    console.log(\"Student Token saved!\");",
-									"}"
-								],
-								"type": "text/javascript"
-							}
-						}
-					],
-					"request": {
-						"method": "POST",
-						"header": [
-							{
-								"key": "Content-Type",
-								"value": "application/json"
-							}
-						],
-						"body": {
-							"mode": "raw",
-							"raw": "{\n  \"email\": \"student@example.com\",\n  \"password\": \"student123\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/auth/login",
@@ -219,7 +120,7 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"new_password\": \"AliNewPassword@123\"\n}"
+							"raw": "{\n  \"new_password\": \"NewPassword@123\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/auth/reset-pwd/:token",
@@ -316,7 +217,7 @@
 			"name": "2. SnapTrade & Alpaca Integration",
 			"item": [
 				{
-					"name": "Connect Alpaca (Protected - Generates Portal URL)",
+					"name": "Connect Alpaca (Generates Browser Portal Link with Trade Access)",
 					"request": {
 						"auth": {
 							"type": "bearer",
@@ -346,13 +247,91 @@
 								"connect-alpaca"
 							]
 						},
-						"description": "Protected route. Registers user on SnapTrade (or reuses stored userSecret from DB) and returns a redirectURI to connect Alpaca Paper."
+						"description": "Protected route (Requires JWT Token). Registers user on SnapTrade if not registered, and returns redirectURI with 'trade' connectionType to connect Alpaca in the browser."
 					},
 					"response": []
 				},
 				{
-					"name": "SnapTrade Webhook Listener (Server-to-Server)",
+					"name": "List Connections (Clean DTO with Accounts)",
 					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/snaptrade/connections",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"snaptrade",
+								"connections"
+							]
+						},
+						"description": "Protected route. Returns clean, curated list of all connected brokerages for the logged-in user, combined with their local accounts."
+					},
+					"response": []
+				},
+				{
+					"name": "Delete Connection (Disconnect Brokerage)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "DELETE",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/snaptrade/connections/:authorizationId",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"snaptrade",
+								"connections",
+								":authorizationId"
+							],
+							"variable": [
+								{
+									"key": "authorizationId",
+									"value": "PASTE_AUTHORIZATION_ID_HERE",
+									"description": "Connection ID to delete/disconnect"
+								}
+							]
+						},
+						"description": "Protected route. Deletes connection authorization from SnapTrade and marks local accounts as 'Disabled'."
+					},
+					"response": []
+				},
+				{
+					"name": "Place Stock Order (Trading API)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
 						"method": "POST",
 						"header": [
 							{
@@ -362,7 +341,62 @@
 						],
 						"body": {
 							"mode": "raw",
-							"raw": "{\n  \"eventType\": \"TEST_WEBHOOK\",\n  \"userId\": \"user_1\",\n  \"eventTimestamp\": \"2026-10-08T12:00:00.000Z\",\n  \"webhookId\": \"test-webhook-uuid\"\n}"
+							"raw": "{\n  \"accountId\": \"PASTE_YOUR_ACTIVE_ACCOUNT_ID_HERE\",\n  \"symbol\": \"AAPL\",\n  \"action\": \"BUY\",\n  \"units\": 1,\n  \"orderType\": \"Market\",\n  \"timeInForce\": \"Day\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/snaptrade/place-order",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"snaptrade",
+								"place-order"
+							]
+						},
+						"description": "Protected route (Requires JWT Token). Places an equity stock order (Market or Limit) with the brokerage account via SnapTrade Trading API."
+					},
+					"response": []
+				},
+				{
+					"name": "SnapTrade Webhook - CONNECTION_ADDED (Triggers BullMQ Queue)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Automatically calculates HMAC SHA-256 Signature for Webhook Security",
+									"const consumerKey = pm.collectionVariables.get(\"snaptradeConsumerKey\");",
+									"if (!consumerKey || consumerKey === \"PASTE_YOUR_SNAPTRADE_CONSUMER_KEY_HERE\") {",
+									"    console.warn(\"Please set 'snaptradeConsumerKey' in collection variables to calculate valid Signature.\");",
+									"} else {",
+									"    const rawBody = pm.request.body.raw || \"\";",
+									"    const hash = CryptoJS.HmacSHA256(rawBody, consumerKey);",
+									"    const signature = CryptoJS.enc.Base64.stringify(hash);",
+									"    pm.request.headers.upsert({ key: \"Signature\", value: signature });",
+									"    console.log(\"Calculated Signature:\", signature);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Signature",
+								"value": "AUTO_CALCULATED_BY_PREREQUEST_SCRIPT",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventType\": \"CONNECTION_ADDED\",\n  \"userId\": \"user_6\"\n}"
 						},
 						"url": {
 							"raw": "{{baseUrl}}/api/snaptrade/webhook",
@@ -375,7 +409,113 @@
 								"webhook"
 							]
 						},
-						"description": "Public webhook endpoint for receiving asynchronous events from SnapTrade cloud servers (e.g. CONNECTION_ATTEMPT_SUCCESS, TEST_WEBHOOK)."
+						"description": "Simulates CONNECTION_ADDED event from SnapTrade. Automatically computes HMAC SHA-256 signature using the collection variable 'snaptradeConsumerKey'. Pushes job to BullMQ Redis Queue."
+					},
+					"response": []
+				},
+				{
+					"name": "SnapTrade Webhook - NEW_ACCOUNT_AVAILABLE (Triggers BullMQ Queue)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Automatically calculates HMAC SHA-256 Signature for Webhook Security",
+									"const consumerKey = pm.collectionVariables.get(\"snaptradeConsumerKey\");",
+									"if (!consumerKey || consumerKey === \"PASTE_YOUR_SNAPTRADE_CONSUMER_KEY_HERE\") {",
+									"    console.warn(\"Please set 'snaptradeConsumerKey' in collection variables to calculate valid Signature.\");",
+									"} else {",
+									"    const rawBody = pm.request.body.raw || \"\";",
+									"    const hash = CryptoJS.HmacSHA256(rawBody, consumerKey);",
+									"    const signature = CryptoJS.enc.Base64.stringify(hash);",
+									"    pm.request.headers.upsert({ key: \"Signature\", value: signature });",
+									"    console.log(\"Calculated Signature:\", signature);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Signature",
+								"value": "AUTO_CALCULATED_BY_PREREQUEST_SCRIPT",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventType\": \"NEW_ACCOUNT_AVAILABLE\",\n  \"userId\": \"user_6\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/snaptrade/webhook",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"snaptrade",
+								"webhook"
+							]
+						},
+						"description": "Simulates NEW_ACCOUNT_AVAILABLE event from SnapTrade. Automatically computes HMAC SHA-256 signature using the collection variable 'snaptradeConsumerKey'. Pushes job to BullMQ Redis Queue."
+					},
+					"response": []
+				},
+				{
+					"name": "SnapTrade Webhook - Other Event (Acknowledged / Ignored)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"const consumerKey = pm.collectionVariables.get(\"snaptradeConsumerKey\");",
+									"if (consumerKey && consumerKey !== \"PASTE_YOUR_SNAPTRADE_CONSUMER_KEY_HERE\") {",
+									"    const rawBody = pm.request.body.raw || \"\";",
+									"    const hash = CryptoJS.HmacSHA256(rawBody, consumerKey);",
+									"    const signature = CryptoJS.enc.Base64.stringify(hash);",
+									"    pm.request.headers.upsert({ key: \"Signature\", value: signature });",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Signature",
+								"value": "AUTO_CALCULATED_BY_PREREQUEST_SCRIPT",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventType\": \"ACCOUNT_HOLDINGS_UPDATED\",\n  \"userId\": \"user_6\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/snaptrade/webhook",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"snaptrade",
+								"webhook"
+							]
+						},
+						"description": "Tests webhook behavior for events that do not trigger sync (e.g. ACCOUNT_HOLDINGS_UPDATED). Should return 200 with received: true."
 					},
 					"response": []
 				}
@@ -391,6 +531,11 @@
 		{
 			"key": "token",
 			"value": "",
+			"type": "string"
+		},
+		{
+			"key": "snaptradeConsumerKey",
+			"value": "PASTE_YOUR_SNAPTRADE_CONSUMER_KEY_HERE",
 			"type": "string"
 		}
 	]

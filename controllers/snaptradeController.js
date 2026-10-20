@@ -30,7 +30,8 @@ const connectAlpaca = async (req, res) => {
 
         const loginResponse = await snaptrade.authentication.loginSnapTradeUser({
             userId: userId,
-            userSecret: userSecret
+            userSecret: userSecret,
+            connectionType: "trade"
         });
 
         res.status(200).json({
@@ -116,8 +117,202 @@ const handleWebhook = async (req, res) => {
         }
     }
 };
+
+const listConnections = async (req, res) => {
+    try {
+        const userId = `user_${req.user.id}`;
+
+        const user = await User.findByPk(req.user.id);
+        if (!user) {
+            return res.status(404).json({ message: "User not found" });
+        }
+
+        if (!user.snaptradeUserSecret) {
+            return res.status(200).json({
+                message: "No connections found",
+                count: 0,
+                connections: []
+            });
+        }
+
+        const response = await snaptrade.connections.listBrokerageAuthorizations({
+            userId: userId,
+            userSecret: user.snaptradeUserSecret
+        });
+
+        const localAccounts = await BrokerageAccount.findAll({
+            where: { userId: user.id }
+        });
+
+        const formattedConnections = (response.data || []).map((auth) => {
+            const linkedAccounts = localAccounts.filter(acc => acc.connectionId === auth.id);
+            return {
+                id: auth.id,
+                brokerageName: auth.brokerage?.name || auth.name,
+                status: auth.disabled ? "Disabled" : "Active",
+                connectedAt: auth.created_date,
+                accounts: linkedAccounts.map(acc => ({
+                    accountId: acc.accountId,
+                    accountName: acc.accountName,
+                    accountNumber: acc.accountNumber,
+                    status: acc.status
+                }))
+            };
+        });
+        return res.status(200).json({
+            message: "Connections fetched successfully",
+            count: formattedConnections.length,
+            connections: formattedConnections
+        });
+
+
+    } catch (error) {
+        console.error("Error listing connections:", error);
+        return res.status(500).json({
+            message: "Failed to list connections",
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+const deleteConnection = async (req, res) => {
+    try {
+        const { authorizationId } = req.params;
+        const userId = `user_${req.user.id}`;
+
+        if (!authorizationId) {
+            return res.status(400).json({ message: "Authorization ID is required" });
+        }
+
+        const user = await User.findByPk(req.user.id);
+        if (!user || !user.snaptradeUserSecret) {
+            return res.status(404).json({ message: "User or SnapTrade credentials not found" });
+        }
+
+        await snaptrade.connections.deleteConnection({
+            connectionId: authorizationId,
+            userId: userId,
+            userSecret: user.snaptradeUserSecret
+        });
+
+
+        await BrokerageAccount.update(
+            { status: "Disabled" },
+            { where: { connectionId: authorizationId, userId: user.id } }
+        );
+
+        console.log(`Connection ${authorizationId} removed for user ${user.id}`);
+        return res.status(200).json({
+            message: "Brokerage connection removed successfully",
+            authorizationId: authorizationId
+        });
+
+    } catch (error) {
+        console.error("Error removing connection:", error);
+        return res.status(500).json({
+            message: "Failed to remove connection",
+            error: error.response?.data || error.message
+        });
+    }
+};
+
+const placeOrder = async (req, res) => {
+    try {
+        const { accountId, symbol, action, units, orderType, price, timeInForce } = req.body;
+        const userId = `user_${req.user.id}`;
+
+        if (!accountId || !symbol || !action || !units) {
+            return res.status(400).json({
+                message: "accountId, symbol, action (BUY/SELL), and units are required"
+            });
+        }
+
+        const normalizedAction = action.toUpperCase();
+        if (normalizedAction !== "BUY" && normalizedAction !== "SELL") {
+            return res.status(400).json({ message: "Action must be either 'BUY' or 'SELL'" });
+        }
+
+        if (Number(units) <= 0) {
+            return res.status(400).json({ message: "Units must be greater than 0" });
+        }
+
+        const normalizedOrderType = orderType ? (orderType.charAt(0).toUpperCase() + orderType.slice(1).toLowerCase()) : "Market";
+        if (normalizedOrderType === "Limit" && (!price || Number(price) <= 0)) {
+            return res.status(400).json({ message: "Price is required and must be greater than 0 for Limit orders" });
+        }
+
+        const user = await User.findByPk(req.user.id);
+        if (!user || !user.snaptradeUserSecret) {
+            return res.status(404).json({ message: "User or SnapTrade credentials not found" });
+        }
+
+        const account = await BrokerageAccount.findOne({
+            where: {
+                accountId: accountId,
+                userId: user.id
+            }
+        });
+        if (!account) {
+            return res.status(403).json({
+                message: "Unauthorized: You do not own this brokerage account"
+            });
+        }
+        if (account.status === "Disabled") {
+            return res.status(400).json({
+                message: "Cannot place order: This brokerage connection is disabled"
+            });
+        }
+
+        // Place Order via SnapTrade API
+        const tradePayload = {
+            userId: userId,
+            userSecret: user.snaptradeUserSecret,
+            account_id: accountId,
+            action: normalizedAction,
+            symbol: symbol.toUpperCase().trim(),
+            order_type: normalizedOrderType,
+            time_in_force: timeInForce || "Day",
+            units: Number(units),
+            price: normalizedOrderType === "Limit" ? Number(price) : null
+        };
+        console.log(`[Trading] Placing ${normalizedAction} order for ${units} shares of ${symbol}...`);
+
+        const orderResponse = await snaptrade.trading.placeForceOrder(tradePayload);
+        const orderData = orderResponse.data;
+
+        return res.status(200).json({
+            message: "Order placed successfully",
+            order: {
+                brokerageOrderId: orderData.brokerage_order_id || orderData.id,
+                status: orderData.status,
+                symbol: symbol.toUpperCase(),
+                action: normalizedAction,
+                units: Number(units),
+                orderType: normalizedOrderType,
+                timeInForce: timeInForce || "Day",
+                placedAt: new Date().toISOString()
+            }
+        });
+
+    } catch (error) {
+        console.error("Order placement failed:", error);
+        return res.status(500).json({
+            message: "Failed to place order",
+            error: error.response?.data || error.message
+        });
+    }
+};
+
 module.exports = {
     connectAlpaca,
     handleWebhook,
-    syncUserAccounts
+    syncUserAccounts,
+    listConnections,
+    deleteConnection,
+    placeOrder
 };
+
+// token   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiZW1haWwiOiJkYXdlZWRAZXhhbXBsZS5jb20iLCJyb2xlIjoic3R1ZGVudCIsImlhdCI6MTc5MjQ4NDcwMSwiZXhwIjoxNzkyNDg1MDAxfQ.P-yTF3rO7Iz0NnJ88QXMwlv9TfTVivAV4wEncbuVFfM
+
+
+// c0d2f710-0e98-4e56-821c-fa26796a4810

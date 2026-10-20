@@ -25,7 +25,7 @@ const login = async (req, res) => {
             role: user.role
         },
             process.env.JWT_SECRET,
-            { expiresIn: "5m" }
+            { expiresIn: "30m" }
         )
         res.status(200).json({
             message: "Login Successful",
