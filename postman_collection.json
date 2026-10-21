@@ -2,7 +2,7 @@
 	"info": {
 		"_postman_id": "8b5a0342-83b6-4b9e-9d8a-9a990ecf892a",
 		"name": "Node 2nd Project - Auth, SnapTrade Alpaca & BullMQ Webhooks",
-		"description": "Postman collection for testing Authentication (Local & Google OAuth 2.0), RBAC, Profile, SnapTrade Alpaca Brokerage integration, BullMQ Webhooks, Connections Management, and Stock Order Placement (Trading API).",
+		"description": "Postman collection for testing Authentication (Local & Google OAuth 2.0), RBAC, Profile, SnapTrade Alpaca Brokerage integration, BullMQ Webhooks, Connections Management, Connection Resync/Reconnect, and Stock Order Placement (Trading API).",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -320,6 +320,45 @@
 					"response": []
 				},
 				{
+					"name": "Reconnect Connection (Generates Reconnect Portal Link)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "POST",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/snaptrade/connections/:connectionId/reconnect",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"snaptrade",
+								"connections",
+								":connectionId",
+								"reconnect"
+							],
+							"variable": [
+								{
+									"key": "connectionId",
+									"value": "PASTE_BROKEN_CONNECTION_ID_HERE",
+									"description": "Authorization / Connection ID to reconnect in SnapTrade portal"
+								}
+							]
+						},
+						"description": "Protected route (Requires JWT Token). Generates a SnapTrade Reconnect Portal link for a broken brokerage connection so the user can re-authenticate."
+					},
+					"response": []
+				},
+				{
 					"name": "Place Stock Order (Trading API)",
 					"request": {
 						"auth": {
@@ -465,6 +504,116 @@
 							]
 						},
 						"description": "Simulates NEW_ACCOUNT_AVAILABLE event from SnapTrade. Automatically computes HMAC SHA-256 signature using the collection variable 'snaptradeConsumerKey'. Pushes job to BullMQ Redis Queue."
+					},
+					"response": []
+				},
+				{
+					"name": "SnapTrade Webhook - CONNECTION_BROKEN (Marks Accounts as Broken in DB)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Automatically calculates HMAC SHA-256 Signature for Webhook Security",
+									"const consumerKey = pm.collectionVariables.get(\"snaptradeConsumerKey\");",
+									"if (!consumerKey || consumerKey === \"PASTE_YOUR_SNAPTRADE_CONSUMER_KEY_HERE\") {",
+									"    console.warn(\"Please set 'snaptradeConsumerKey' in collection variables to calculate valid Signature.\");",
+									"} else {",
+									"    const rawBody = pm.request.body.raw || \"\";",
+									"    const hash = CryptoJS.HmacSHA256(rawBody, consumerKey);",
+									"    const signature = CryptoJS.enc.Base64.stringify(hash);",
+									"    pm.request.headers.upsert({ key: \"Signature\", value: signature });",
+									"    console.log(\"Calculated Signature:\", signature);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Signature",
+								"value": "AUTO_CALCULATED_BY_PREREQUEST_SCRIPT",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventType\": \"CONNECTION_BROKEN\",\n  \"userId\": \"user_6\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/snaptrade/webhook",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"snaptrade",
+								"webhook"
+							]
+						},
+						"description": "Simulates CONNECTION_BROKEN event from SnapTrade. Automatically computes HMAC SHA-256 signature using 'snaptradeConsumerKey'. Pushes brokenConnectionJob to BullMQ Queue to mark accounts as 'Broken'."
+					},
+					"response": []
+				},
+				{
+					"name": "SnapTrade Webhook - CONNECTION_FIXED (Restores Accounts to Active via Resync)",
+					"event": [
+						{
+							"listen": "prerequest",
+							"script": {
+								"exec": [
+									"// Automatically calculates HMAC SHA-256 Signature for Webhook Security",
+									"const consumerKey = pm.collectionVariables.get(\"snaptradeConsumerKey\");",
+									"if (!consumerKey || consumerKey === \"PASTE_YOUR_SNAPTRADE_CONSUMER_KEY_HERE\") {",
+									"    console.warn(\"Please set 'snaptradeConsumerKey' in collection variables to calculate valid Signature.\");",
+									"} else {",
+									"    const rawBody = pm.request.body.raw || \"\";",
+									"    const hash = CryptoJS.HmacSHA256(rawBody, consumerKey);",
+									"    const signature = CryptoJS.enc.Base64.stringify(hash);",
+									"    pm.request.headers.upsert({ key: \"Signature\", value: signature });",
+									"    console.log(\"Calculated Signature:\", signature);",
+									"}"
+								],
+								"type": "text/javascript"
+							}
+						}
+					],
+					"request": {
+						"method": "POST",
+						"header": [
+							{
+								"key": "Content-Type",
+								"value": "application/json"
+							},
+							{
+								"key": "Signature",
+								"value": "AUTO_CALCULATED_BY_PREREQUEST_SCRIPT",
+								"type": "text"
+							}
+						],
+						"body": {
+							"mode": "raw",
+							"raw": "{\n  \"eventType\": \"CONNECTION_FIXED\",\n  \"userId\": \"user_6\"\n}"
+						},
+						"url": {
+							"raw": "{{baseUrl}}/api/snaptrade/webhook",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"snaptrade",
+								"webhook"
+							]
+						},
+						"description": "Simulates CONNECTION_FIXED event from SnapTrade after successful reconnect in portal. Pushes syncAccountJob to BullMQ Queue which resyncs accounts and restores status to 'Active'."
 					},
 					"response": []
 				},
