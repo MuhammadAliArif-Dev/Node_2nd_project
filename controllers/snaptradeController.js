@@ -97,15 +97,29 @@ const handleWebhook = async (req, res) => {
         }
         console.log(`Received: ${eventType} | User: ${userId || "None"}`);
 
-        if (eventType === "CONNECTION_ADDED" || eventType === "ACCOUNT_ADDED" || eventType === "CONNECTION_ATTEMPT_SUCCESS" || eventType === "NEW_ACCOUNT_AVAILABLE") {
+        if (eventType === "CONNECTION_ADDED" || 
+            eventType === "ACCOUNT_ADDED" || 
+            eventType === "CONNECTION_ATTEMPT_SUCCESS" || 
+            eventType === "NEW_ACCOUNT_AVAILABLE" || 
+            eventType === "CONNECTION_FIXED" || 
+            eventType === "CONNECTION_UPDATED") {
             if (userId && typeof userId === "string") {
                 await webhookQueue.add("syncAccountJob", {
                     userId: userId,
                     eventType: eventType
                 })
-                console.log(`Job successfullt added to Redis for: ${userId}`)
+                console.log(`Sync job successfully added to Redis for: ${userId}`)
             }
-        } else {
+        } else if(eventType === 'CONNECTION_BROKEN') {
+            if (userId && typeof userId === "string") {
+                await webhookQueue.add("brokenConnectionJob", {
+                    userId: userId,
+                    eventType: eventType
+                })
+                console.log(`Broken connection job successfully added to Redis for : ${userId}`)
+            }
+        } 
+        else {
             console.log(`Event '${eventType}' acknowledged, no sync needed.`);
         }
         return res.status(200).json({ received: true})
@@ -303,16 +317,63 @@ const placeOrder = async (req, res) => {
     }
 };
 
+const reconnectConnection = async (req, res) => {
+    try {
+        const { connectionId } = req.params
+        const userId = `user_${req.user.id}`
+        
+        if(!connectionId) {
+            return res.status(400).json({ message: "Connection ID is required"})
+        }
+
+        const user = await User.findByPk(req.user.id)
+        if(!user || !user.snaptradeUserSecret) {
+            return res.status(400).json({ message: "User or SnapTrade credentials not found"})
+        }
+
+        const account = await BrokerageAccount.findOne({
+            where: {
+                connectionId: connectionId,
+                userId: user.id
+            }
+        })
+        if(!account) {
+            return res.status(403).json({
+                message: "Unauthorized: You do not own this brokerage connection"
+            })
+        }
+
+        console.log(`Generating reconnect link for connection: ${connectionId}....`)
+        const loginResponse = await snaptrade.authentication.loginSnapTradeUser({
+            userId: userId,
+            userSecret: user.snaptradeUserSecret,
+            reconnect: connectionId,
+            connectionType: "trade"
+        })
+        return res.status(200).json({
+            message: "Reconnecetion link generated successfully",
+            redirectURI: loginResponse.data.redirectURI,
+            connectionId: connectionId
+        })
+    } catch (error) {
+        console.error("Failed to generate reconnect link:", error);
+        return res.status(500).json({
+            message: "Failed to generate reconnect link",
+            error: error.response?.data || error.message
+        });
+    }
+}
+
 module.exports = {
     connectAlpaca,
     handleWebhook,
     syncUserAccounts,
     listConnections,
     deleteConnection,
-    placeOrder
+    placeOrder,
+    reconnectConnection
 };
 
-// token   eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpZCI6NiwiZW1haWwiOiJkYXdlZWRAZXhhbXBsZS5jb20iLCJyb2xlIjoic3R1ZGVudCIsImlhdCI6MTc5MjQ4NDcwMSwiZXhwIjoxNzkyNDg1MDAxfQ.P-yTF3rO7Iz0NnJ88QXMwlv9TfTVivAV4wEncbuVFfM
 
-
-// c0d2f710-0e98-4e56-821c-fa26796a4810
+// 3b04ce8d-c400-4eb3-a4ce-bb7629501c8c
+// f9b8f66e-6a85-41ad-b45c-8232ed522294

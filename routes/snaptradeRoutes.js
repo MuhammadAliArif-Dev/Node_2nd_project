@@ -1,6 +1,6 @@
 const express = require("express")
 const router = express.Router()
-const { connectAlpaca, handleWebhook, listConnections, deleteConnection, placeOrder} = require("../controllers/snaptradeController")
+const { connectAlpaca, handleWebhook, listConnections, deleteConnection, placeOrder, reconnectConnection} = require("../controllers/snaptradeController")
 const authMiddleware = require("../middleware/authMiddleware")
 const verifySnapTradeWebhook = require("../middleware/verifyWebhookMiddleware")
 
@@ -13,5 +13,7 @@ router.get("/connections", authMiddleware, listConnections)
 router.delete("/connections/:authorizationId", authMiddleware, deleteConnection)
 
 router.post("/place-order", authMiddleware, placeOrder)
+
+router.post("/connections/:connectionId/reconnect", authMiddleware, reconnectConnection)
 
 module.exports = router
