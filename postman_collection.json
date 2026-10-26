@@ -1,8 +1,8 @@
 {
 	"info": {
 		"_postman_id": "8b5a0342-83b6-4b9e-9d8a-9a990ecf892a",
-		"name": "Node 2nd Project - Auth, SnapTrade Alpaca & BullMQ Webhooks",
-		"description": "Postman collection for testing Authentication (Local & Google OAuth 2.0), RBAC, Profile, SnapTrade Alpaca Brokerage integration, BullMQ Webhooks, Connections Management, Connection Resync/Reconnect, and Stock Order Placement (Trading API).",
+		"name": "Node 2nd Project - Auth, SnapTrade Alpaca, Massive Market Data & BullMQ Webhooks",
+		"description": "Postman collection for testing Authentication (Local & Google OAuth 2.0), RBAC, Profile, SnapTrade Alpaca Brokerage integration, Massive / Polygon.io Market Data Provider, BullMQ Webhooks, Connections Management, Connection Resync/Reconnect, and Stock Order Placement (Trading API).",
 		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
 	},
 	"item": [
@@ -665,6 +665,117 @@
 							]
 						},
 						"description": "Tests webhook behavior for events that do not trigger sync (e.g. ACCOUNT_HOLDINGS_UPDATED). Should return 200 with received: true."
+					},
+					"response": []
+				}
+			]
+		},
+		{
+			"name": "3. Market Data (Massive / Polygon.io)",
+			"item": [
+				{
+					"name": "Get Market Status (Open / Closed)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/market/status",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"market",
+								"status"
+							]
+						},
+						"description": "Protected route (Requires JWT Token). Checks whether US stock markets (NYSE, NASDAQ) are open, closed, or in extended hours using Massive (Polygon.io) API."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Ticker Details (Company Profile)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/market/ticker/:symbol",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"market",
+								"ticker",
+								":symbol"
+							],
+							"variable": [
+								{
+									"key": "symbol",
+									"value": "AAPL",
+									"description": "Stock ticker symbol (e.g. AAPL, TSLA, MSFT, NVDA)"
+								}
+							]
+						},
+						"description": "Protected route (Requires JWT Token). Fetches company profile, name, primary exchange, currency, market type, and description for a given stock symbol."
+					},
+					"response": []
+				},
+				{
+					"name": "Get Stock Previous Close / Quote (OHLC & Volume)",
+					"request": {
+						"auth": {
+							"type": "bearer",
+							"bearer": [
+								{
+									"key": "token",
+									"value": "{{token}}",
+									"type": "string"
+								}
+							]
+						},
+						"method": "GET",
+						"header": [],
+						"url": {
+							"raw": "{{baseUrl}}/api/market/quote/:symbol",
+							"host": [
+								"{{baseUrl}}"
+							],
+							"path": [
+								"api",
+								"market",
+								"quote",
+								":symbol"
+							],
+							"variable": [
+								{
+									"key": "symbol",
+									"value": "AAPL",
+									"description": "Stock ticker symbol (e.g. AAPL, TSLA, MSFT, NVDA)"
+								}
+							]
+						},
+						"description": "Protected route (Requires JWT Token). Fetches previous trading day's open, high, low, close (OHLC), volume, and VWAP transformed cleanly via DTO pattern."
 					},
 					"response": []
 				}
